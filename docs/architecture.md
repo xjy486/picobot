@@ -80,7 +80,7 @@ sequenceDiagram
     participant U as 用户
     participant CLI as CLIChannel
     participant BUS as MessageBus
-    participant LOOP as AgentLoop
+    participant AGENT as AgentLoop
     participant CTX as ContextBuilder
     participant P as OpenAIProvider
     participant T as ToolRegistry
@@ -89,29 +89,29 @@ sequenceDiagram
     U->>CLI: 输入消息
     CLI->>BUS: publish_inbound(InboundMessage)
 
-    LOOP->>BUS: consume_inbound()
-    BUS-->>LOOP: InboundMessage
+    AGENT->>BUS: consume_inbound()
+    BUS-->>AGENT: InboundMessage
 
-    LOOP->>S: get_or_create(session_key)
-    S-->>LOOP: Session + history
+    AGENT->>S: get_or_create(session_key)
+    S-->>AGENT: Session + history
 
-    LOOP->>CTX: build_messages(history, user_msg)
-    CTX-->>LOOP: [system, *history, user]
+    AGENT->>CTX: build_messages(history, user_msg)
+    CTX-->>AGENT: [system, *history, user]
 
     loop ReAct (最多 10 轮)
-        LOOP->>P: chat(messages, tools)
-        P-->>LOOP: ProviderResponse
+        AGENT->>P: chat(messages, tools)
+        P-->>AGENT: ProviderResponse
 
         alt 有 tool_calls
-            LOOP->>T: execute(name, args)
-            T-->>LOOP: result
+            AGENT->>T: execute(name, args)
+            T-->>AGENT: result
         else 无 tool_calls
-            LOOP-->>LOOP: 退出循环
+            AGENT-->>AGENT: 退出循环
         end
     end
 
-    LOOP->>S: save(session)
-    LOOP->>BUS: publish_outbound(OutboundMessage)
+    AGENT->>S: save(session)
+    AGENT->>BUS: publish_outbound(OutboundMessage)
 
     BUS-->>CLI: consume_outbound()
     CLI->>U: print(response)
