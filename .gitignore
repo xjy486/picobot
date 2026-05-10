@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Tests / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Build artifacts
+build/
+dist/
+
+# IDE
+.idea/
+.vscode/
+
+# Local secrets — 永远不入库
+.env
+.env.local
+.env.*.local
+
+# Picobot 运行时数据（默认在 ~/.picobot，但以防万一被指向项目目录）
+.picobot/
