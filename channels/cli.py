@@ -12,7 +12,10 @@ class CLIChannel(BaseChannel):
     async def start(self) -> None:
         loop = asyncio.get_running_loop()
         while True:
-            user_input = await loop.run_in_executor(None, lambda: input("You: ").strip())
+            try:
+                user_input = await loop.run_in_executor(None, lambda: input("You: ").strip())
+            except (EOFError, KeyboardInterrupt):
+                return
             if not user_input:
                 continue
             if user_input.lower() in ("exit", "quit"):
