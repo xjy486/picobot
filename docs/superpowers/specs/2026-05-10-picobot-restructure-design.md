@@ -104,9 +104,16 @@ picobot/
 
 ```python
 @dataclass
+class ToolCall:
+    id: str
+    name: str
+    arguments: str   # JSON string，由 AgentLoop 调 json.loads 反序列化
+
+
+@dataclass
 class ProviderResponse:
     content: str | None
-    tool_calls: list[ToolCall]   # 归一化后的 tool_call 列表
+    tool_calls: list[ToolCall]   # 没有工具调用时为空列表
 
 
 class Provider(ABC):
@@ -118,7 +125,7 @@ class Provider(ABC):
     ) -> ProviderResponse: ...
 ```
 
-`AgentLoop` 只依赖 `Provider` 接口，OpenAI SDK 的 `tool_calls` 结构由 `providers/openai.py` 转换为统一的 `ProviderResponse`。
+`AgentLoop` 只依赖 `Provider` 接口与 `ToolCall`，OpenAI SDK 的 `tool_calls` 结构由 `providers/openai.py` 转换为统一的 `ProviderResponse`。
 
 ### 5.2 `tools/base.py`
 
@@ -269,7 +276,7 @@ class Config:
 2. 目录结构图
 3. 安装：`pip install -e ".[dev,dotenv]"`
 4. 配置：`.env` 字段说明（API_KEY / API_BASE / MODEL / WORKSPACE）
-5. 运行：`python -m picobot.app`
+5. 运行：`python app.py`
 6. 测试：`pytest`
 7. 致谢：链接 nanobot
 
@@ -277,7 +284,7 @@ class Config:
 
 1. `git log --oneline` 显示 13 个干净的中文 commit（顺序与第 7 节一致）。
 2. `pytest` 全绿。
-3. `python -m picobot.app` 启动后 CLI 至少能完成一轮交互（前提：已配 `.env`）。
+3. `python app.py` 启动后 CLI 至少能完成一轮交互（前提：已配 `.env`）。
 4. 项目根没有任何旧的 `agent-*.py` / `skills-loader.py`。
 5. 源码里没有任何硬编码 API key（`grep 'sk-or-'` 在 git tracked 文件中无命中）。
 6. `.env` 不在 git tracked files 里；`.env.example` 在。
