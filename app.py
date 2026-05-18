@@ -9,6 +9,7 @@ import shutil
 from pathlib import Path
 
 from agent.context import ContextBuilder
+from agent.debug import DebugLogger
 from agent.loop import AgentLoop
 from channels.base import BaseChannel, MessageBus
 from channels.cli import CLIChannel
@@ -76,6 +77,10 @@ async def main() -> None:
     skills_loader = SkillsLoader(config.workspace)
     context = ContextBuilder(config.workspace, memory_loader, skills_loader)
 
+    debug_logger = DebugLogger(config.workspace)
+    if config.debug:
+        debug_logger.enable(config.workspace)
+
     agent = AgentLoop(
         bus=bus,
         provider=provider,
@@ -84,6 +89,7 @@ async def main() -> None:
         sessions=sessions,
         max_iterations=config.max_iterations,
         history_limit=config.history_limit,
+        debug_logger=debug_logger,
     )
 
     cli = CLIChannel(bus)

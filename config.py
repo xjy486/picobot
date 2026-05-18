@@ -26,6 +26,7 @@ class Config:
     workspace: Path
     max_iterations: int = 10
     history_limit: int = 50
+    debug: bool = False
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -48,4 +49,5 @@ class Config:
             workspace=workspace,
             max_iterations=int(os.environ.get("MAX_ITERATIONS", "10")),
             history_limit=int(os.environ.get("HISTORY_LIMIT", "50")),
+            debug=os.environ.get("PICOBOT_DEBUG", "").strip().lower() in ("1", "true", "yes"),
         )

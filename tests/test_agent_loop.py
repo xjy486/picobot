@@ -81,3 +81,42 @@ async def test_react_preserves_reasoning_content(agent_deps):
     assistant_msgs = [m for m in messages if m["role"] == "assistant"]
     assert len(assistant_msgs) == 1
     assert assistant_msgs[0].get("reasoning_content") == "thinking about writing a file"
+
+
+@pytest.mark.asyncio
+async def test_react_logs_debug_context(agent_deps):
+    """当传入 debug_logger 时，_react 应在每次 provider.chat 前记录上下文。"""
+    bus, tools, context, sessions = agent_deps
+    provider = FakeProvider([
+        ProviderResponse(
+            content=None,
+            tool_calls=[ToolCall(id="c1", name="noop", arguments="{}")],
+        ),
+        ProviderResponse(content="done", tool_calls=[]),
+    ])
+
+    logged = []
+
+    class FakeDebugLogger:
+        def __init__(self):
+            self._enabled = True
+        async def log_context(self, session_key, phase, messages):
+            logged.append((session_key, phase, len(messages)))
+
+    agent = AgentLoop(
+        bus=bus,
+        provider=provider,
+        tools=tools,
+        context=context,
+        sessions=sessions,
+        max_iterations=5,
+        debug_logger=FakeDebugLogger(),
+    )
+
+    messages = [{"role": "user", "content": "do something"}]
+    reply = await agent._react(messages, session_key="cli:test")
+    assert reply == "done"
+    # 两次 provider.chat：第一次 tool_call + 第二次最终回复
+    assert len(logged) == 2
+    assert logged[0] == ("cli:test", "react_0", 1)
+    assert logged[1] == ("cli:test", "react_1", 3)  # user + assistant + tool

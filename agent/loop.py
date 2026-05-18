@@ -9,6 +9,7 @@ import json
 from datetime import datetime
 
 from agent.context import ContextBuilder
+from agent.debug import DebugLogger
 from channels.base import MessageBus, OutboundMessage
 from providers.base import Provider
 from session.manager import SessionManager
@@ -25,6 +26,7 @@ class AgentLoop:
         sessions: SessionManager,
         max_iterations: int = 10,
         history_limit: int = 50,
+        debug_logger: DebugLogger | None = None,
     ):
         self._bus = bus
         self._provider = provider
@@ -33,6 +35,7 @@ class AgentLoop:
         self._sessions = sessions
         self._max_iterations = max_iterations
         self._history_limit = history_limit
+        self._debug = debug_logger
 
     async def run(self) -> None:
         while True:
@@ -44,7 +47,11 @@ class AgentLoop:
             session = self._sessions.get_or_create(message.session_key)
             history = session.get_history(max_messages=self._history_limit)
             messages = self._context.build_messages(history, message.content)
-            reply = await self._react(messages)
+            if self._debug:
+                await self._debug.log_context(
+                    message.session_key, "start", messages
+                )
+            reply = await self._react(messages, message.session_key)
 
             timestamp = datetime.now().isoformat()
             session.messages.append(
@@ -63,8 +70,12 @@ class AgentLoop:
                 )
             )
 
-    async def _react(self, messages: list[dict]) -> str:
-        for _ in range(self._max_iterations):
+    async def _react(self, messages: list[dict], session_key: str = "") -> str:
+        for i in range(self._max_iterations):
+            if self._debug:
+                await self._debug.log_context(
+                    session_key, f"react_{i}", messages
+                )
             response = await self._provider.chat(
                 messages, tools=self._tools.get_definitions() or None
             )
