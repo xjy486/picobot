@@ -47,4 +47,14 @@ class OpenAIProvider(Provider):
                         arguments=call.function.arguments,
                     )
                 )
-        return ProviderResponse(content=message.content, tool_calls=tool_calls)
+        # 兼容不同版本 OpenAI SDK 的额外字段提取
+        reasoning_content = getattr(message, "reasoning_content", None)
+        if reasoning_content is None:
+            extra = getattr(message, "model_extra", None) or {}
+            reasoning_content = extra.get("reasoning_content")
+
+        return ProviderResponse(
+            content=message.content,
+            tool_calls=tool_calls,
+            reasoning_content=reasoning_content,
+        )

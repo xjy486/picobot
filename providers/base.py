@@ -19,6 +19,9 @@ class ToolCall:
 class ProviderResponse:
     content: str | None
     tool_calls: list[ToolCall]
+    # 部分兼容端点（智谱、DeepSeek-R1 等）在 thinking 模式下要求
+    # 多轮对话必须将上一轮 assistant 的 reasoning_content 回传。
+    reasoning_content: str | None = None
 
 
 class Provider(ABC):

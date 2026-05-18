@@ -69,23 +69,25 @@ class AgentLoop:
                 messages, tools=self._tools.get_definitions() or None
             )
             if response.tool_calls:
-                messages.append(
-                    {
-                        "role": "assistant",
-                        "content": response.content,
-                        "tool_calls": [
-                            {
-                                "id": call.id,
-                                "type": "function",
-                                "function": {
-                                    "name": call.name,
-                                    "arguments": call.arguments,
-                                },
-                            }
-                            for call in response.tool_calls
-                        ],
-                    }
-                )
+                assistant_msg = {
+                    "role": "assistant",
+                    "content": response.content,
+                    "tool_calls": [
+                        {
+                            "id": call.id,
+                            "type": "function",
+                            "function": {
+                                "name": call.name,
+                                "arguments": call.arguments,
+                            },
+                        }
+                        for call in response.tool_calls
+                    ],
+                }
+                # 兼容 thinking 模式端点：必须回传 reasoning_content
+                if response.reasoning_content:
+                    assistant_msg["reasoning_content"] = response.reasoning_content
+                messages.append(assistant_msg)
                 for call in response.tool_calls:
                     args = json.loads(call.arguments)
                     print(f"  [Tool] {call.name}({call.arguments[:80]})")
